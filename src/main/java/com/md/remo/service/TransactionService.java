@@ -43,7 +43,7 @@ public class TransactionService {
         try {
             transaction = transactionRepository.save(transaction);
         } catch (Exception e) {
-            // TODO log the exception with the userId (without confidential details)
+            System.err.printf("Error saving transaction for user ID: %s. Exception: %s%n", transaction.getUserId(), e.getMessage());
             throw new RuntimeException("Failed to create transaction", e);
         }
         if (transaction.getId() != null) {
