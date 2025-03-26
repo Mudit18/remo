@@ -4,6 +4,10 @@ import com.md.remo.dto.TransactionDTO;
 import com.md.remo.model.Transaction;
 import com.md.remo.service.TransactionService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/transactions")
+@Tag(name = "Transactions", description = "Transaction Management API")
 public class TransactionController {
 
     private final TransactionService service;
@@ -21,6 +26,15 @@ public class TransactionController {
     }
 
     @PostMapping("/add")
+    @Operation(
+        summary = "Add a new transaction",
+        description = "Creates a new transaction and validates for suspicious activity.",
+        responses = {
+            @ApiResponse(responseCode = "201", description = "Transaction successfully created"),
+            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+        }
+    )
     public ResponseEntity<Transaction> logTransaction(@RequestBody TransactionDTO transaction) {
         try {
             // TODO authorization
@@ -34,6 +48,15 @@ public class TransactionController {
     }
 
     @GetMapping("/getSuspiciousTransactions/{userId}")
+    @Operation(
+        summary = "Get suspicious transactions",
+        description = "Fetches all suspicious transactions for a given user.",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "List of suspicious transactions"),
+            @ApiResponse(responseCode = "400", description = "Invalid user ID"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+        }
+    )
     public ResponseEntity<List<Transaction>> getSuspiciousTransactions(@PathVariable String userId, @RequestParam(defaultValue = "0") Long offset) {
         if (userId == null || userId.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(null);

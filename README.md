@@ -5,60 +5,50 @@
 
 ## Flow and Design of the Project
 
-The project follows a layered architecture consisting of the following components:
+## Project Architecture
 
-1. **Controller Layer**: Handles incoming HTTP requests and responses. It acts as an interface between the client and the service layer.
-2. **Service Layer**: Contains the business logic of the application. It processes data received from the controller and interacts with the repository layer to perform CRUD operations.
-3. **Repository Layer**: Responsible for data access and manipulation. It interacts with the database using Spring Data JPA to perform queries and manage transactions.
-4. **Model Layer**: Represents the data structure of the application. It includes entities that map to database tables and data transfer objects (DTOs) for transferring data between layers.
-   - **Transaction Model**: Represents a financial transaction with attributes such as `id`, `userId`, `amount`, `timestamp`, `lastUpdated`, `isActive`, and `transactionType`. This model is used to store and retrieve transaction data from the database.
-   - **SuspiciousTransaction Model**: Represents a flagged transaction that is considered suspicious based on certain criteria. It includes attributes like `transaction_id`, `type`, `lastUpdated`, and `resolved`. This model is used to track and manage transactions that require further investigation.
+The project utilizes a layered architecture comprising:
 
-The workflow of the transaction processing begins when a user submits a transaction request through the API. The `TransactionController` receives this request and delegates the task to the `TransactionService`. 
+1. **Controller Layer**: Manages HTTP requests and responses, serving as the interface between the client and service layer.
+2. **Service Layer**: Contains business logic, processing data from the controller and interacting with the repository for CRUD operations.
+3. **Repository Layer**: Handles data access and manipulation via Spring Data JPA.
+4. **Model Layer**: Represents data structures, including:
+   - **Transaction Model**: Represents financial transactions with attributes like `id`, `userId`, `amount`, `timestamp`, `lastUpdated`, `isActive`, and `transactionType`.
+   - **SuspiciousTransaction Model**: Flags suspicious transactions with attributes such as `transaction_id`, `type`, `lastUpdated`, and `resolved`.
 
-In the `TransactionService`, the `createTransaction` method is responsible for creating a new transaction. Once the transaction is saved to the database, the service then calls the `validateSuspiciousTransaction` method to assess whether the transaction meets any criteria for being flagged as suspicious.
+### Transaction Processing Workflow
 
-A transaction can be flagged suspicious based on several checks:
-1. **High Volume Transactions**: If the transaction amount exceeds a predefined threshold, it is flagged as a high volume transaction.
-2. **Frequent Small Transactions**: The service checks if there have been multiple transactions below a certain amount within a specified time frame. If the count exceeds a threshold, it indicates potentially suspicious behavior.
-3. **Rapid Transfers**: The service checks for rapid transfers of a specific type (e.g., "TRANSFER") within a defined time period. If the count of such transactions exceeds a threshold, it is flagged as suspicious.
+1. A user submits a transaction request via the API.
+2. The `TransactionController` delegates the request to the `TransactionService`.
+3. The `createTransaction` method saves the transaction and calls `validateSuspiciousTransaction` to check for suspicious criteria.
 
-If any of these checks are triggered, the transaction is marked as suspicious, and a corresponding entry is created in the `SuspiciousTransaction` model to track it for further investigation. This ensures that potentially fraudulent activities are monitored and addressed promptly.
-Other approaches considered for handling suspicious transactions included:
+### Criteria for Flagging Suspicious Transactions
 
-1. **Cron Jobs**: This method would involve scheduling periodic checks to identify suspicious transactions after they have been processed. However, this reactive approach could lead to delays in addressing fraudulent activities, as transactions could remain unflagged for a significant period.
+- **High Volume Transactions**: Flags transactions exceeding a predefined amount.
+- **Frequent Small Transactions**: Flags if multiple transactions below a certain amount occur within a specified timeframe.
+- **Rapid Transfers**: Flags if rapid transfers of a specific type exceed a threshold.
 
-2. **SQL Triggers**: While triggers could automatically flag transactions based on certain criteria at the database level, they can complicate database management and may not provide the flexibility needed for complex business logic. Additionally, triggers can introduce performance overhead during transaction processing.
+If flagged, a corresponding entry is created in the `SuspiciousTransaction` model for further investigation.
 
-3. **Message Queue Architecture**: Although a message queue could handle asynchronous processing of transactions and allow for background checks, this approach was not chosen for this implementation due to the need for a fast and straightforward solution. Implementing a message queue would add complexity and latency, which was not desirable for the initial project setup.
+### Alternative Approaches Considered
 
-Ultimately, the proactive validation approach was selected to ensure immediate feedback and effective fraud prevention without the drawbacks associated with these other methods.
+- **Cron Jobs**: Periodic checks post-processing could delay fraud detection.
+- **SQL Triggers**: Automatic flagging at the database level complicates management and may hinder flexibility.
+- **Message Queue Architecture**: Asynchronous processing adds complexity and latency, not suitable for initial implementation.
+
+The proactive validation approach was chosen for immediate feedback and effective fraud prevention.
 
 ## Assumptions and Trade-offs
 
-- **Immediate Validation vs. Batch Processing**: 
-  - Immediate validation of suspicious transactions during the transaction logging process was chosen to ensure suspicious activities are flagged in real time.
-  - An alternative approach could have involved using batch processing (e.g., cron jobs), but this might introduce delays in detecting suspicious activity.
+- **Immediate Validation vs. Batch Processing**: Immediate validation ensures real-time flagging of suspicious activities, unlike batch processing which may introduce delays.
+- **Hardcoded Threshold Values**: Thresholds are hardcoded for simplicity; moving them to configuration files would allow easier modifications.
+- **Basic Pagination**: Implemented using an offset parameter, but advanced filtering was not included for simplicity.
 
-- **Threshold Values Hardcoded**: 
-  - For simplicity, threshold values (e.g., max transaction amount, frequency check interval) are hardcoded in the application.
-  - A more flexible approach would involve moving these to configuration files or environment variables for easier modification.
+## Future Improvements
 
-- **Pagination**: 
-  - Basic pagination was added using the offset parameter when fetching suspicious transactions.
-  - However, limit or advanced filtering was not implemented to keep the solution straightforward.
-
-## Future Improvements and Enhancements
-
-- **Dynamic Threshold Configuration**: 
-  - Move the suspicious transaction thresholds to configuration files or environment variables for easier modification. This will allow for more flexible adjustments without requiring code changes and redeployments.
-
-- **Authentication and Authorization**: 
-  - Implement JWT-based authentication to ensure only authorized users can access or create transactions. This will enhance the security of the application and protect sensitive transaction data.
-
-- **Rate Limiting**: 
-  - Add rate limiting to prevent abuse of the API. This will help mitigate the risk of denial-of-service attacks and ensure fair usage of the service.
-
+- **Dynamic Threshold Configuration**: Move thresholds to configuration files for easier adjustments.
+- **Authentication and Authorization**: Implement JWT-based authentication for secure access to transactions.
+- **Rate Limiting**: Introduce rate limiting to prevent API abuse and ensure fair usage.
 
 ## Setup Instructions
 
@@ -92,6 +82,8 @@ Ultimately, the proactive validation approach was selected to ensure immediate f
    ```bash
    mvn spring-boot:run
    ```
+7. **Access the Swagger UI** to see the API documentation at [http://localhost:8080/remo-api.html](http://localhost:8080/remo-api.html)
+
 
 ## Testing
 
