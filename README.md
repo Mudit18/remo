@@ -36,19 +36,14 @@ If flagged, a corresponding entry is created in the `SuspiciousTransaction` mode
 - **SQL Triggers**: Automatic flagging at the database level complicates management and may hinder flexibility.
 - **Message Queue Architecture**: Asynchronous processing adds complexity and latency, not suitable for initial implementation.
 
-The proactive validation approach was chosen for immediate feedback and effective fraud prevention.
-
-## Assumptions and Trade-offs
-
-- **Immediate Validation vs. Batch Processing**: Immediate validation ensures real-time flagging of suspicious activities, unlike batch processing which may introduce delays.
-- **Hardcoded Threshold Values**: Thresholds are hardcoded for simplicity; moving them to configuration files would allow easier modifications.
-- **Basic Pagination**: Implemented using an offset parameter, but advanced filtering was not included for simplicity.
+The proactive validation approach was chosen considering the time to build and the accuracy.
 
 ## Future Improvements
 
 - **Dynamic Threshold Configuration**: Move thresholds to configuration files for easier adjustments.
 - **Authentication and Authorization**: Implement JWT-based authentication for secure access to transactions.
 - **Rate Limiting**: Introduce rate limiting to prevent API abuse and ensure fair usage.
+- **Database Indexing**: Implement indexing on frequently queried fields like user_id and timestamp in the database to improve query performance and efficiency.
 
 ## Setup Instructions
 
