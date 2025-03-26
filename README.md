@@ -20,8 +20,10 @@ enter the password when prompted
 
 #TODO move to a env specific properties setup
 
-3. mvn clean install
+3. Run the SQL script init.sql
 
-4. mvn spring-boot:run
+4. mvn clean install
 
-5. 
+5. mvn spring-boot:run
+
+6. 
