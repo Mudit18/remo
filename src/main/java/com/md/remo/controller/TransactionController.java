@@ -20,27 +20,31 @@ public class TransactionController {
         this.service = service;
     }
 
-    // TODO secure to ensure only the user can add their transactions
-    @PostMapping
+    @PostMapping("/add")
     public ResponseEntity<Transaction> logTransaction(@RequestBody TransactionDTO transaction) {
         try {
-            // TODO secure to ensure only the user can fetch their transactions
+            // TODO authorization
             Transaction createdTransaction = service.createTransaction(transaction);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdTransaction);
         } catch (Exception e) {
             // TODO add a logger and log exception
+            System.out.printf("Error saving transaction for user ID: %s. Exception: %s%n", transaction.getUserId(), e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-    
-    @GetMapping("/suspicious/{userId}")
-    public ResponseEntity<List<Transaction>> getSuspiciousTransactions(@PathVariable String userId) {
+
+    @GetMapping("/getSuspiciousTransactions/{userId}")
+    public ResponseEntity<List<Transaction>> getSuspiciousTransactions(@PathVariable String userId, @RequestParam(defaultValue = "0") Long offset) {
+        if (userId == null || userId.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
         try {
-            // TODO secure to ensure only the user can fetch their transactions
-            List<Transaction> suspiciousTransactions = service.getSuspiciousTransactions(userId);
+            // TODO authorization
+            List<Transaction> suspiciousTransactions = service.getSuspiciousTransactions(userId, 100L, offset);
             return ResponseEntity.ok(suspiciousTransactions);
         } catch (Exception e) {
-            // TODO log exception
+            // TODO log using logger
+            System.out.printf("Error retrieving suspicious transactions for user ID: %s. Exception: %s%n", userId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
