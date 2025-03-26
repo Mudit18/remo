@@ -29,5 +29,6 @@ public class Transaction {
     private LocalDateTime timestamp;
 
     @Column(nullable = false)
-    private String transactionType;
+    @Enumerated(EnumType.STRING)
+    private TransactionType transactionType;
 }
