@@ -34,6 +34,31 @@ Other approaches considered for handling suspicious transactions included:
 
 Ultimately, the proactive validation approach was selected to ensure immediate feedback and effective fraud prevention without the drawbacks associated with these other methods.
 
+## Assumptions and Trade-offs
+
+- **Immediate Validation vs. Batch Processing**: 
+  - Immediate validation of suspicious transactions during the transaction logging process was chosen to ensure suspicious activities are flagged in real time.
+  - An alternative approach could have involved using batch processing (e.g., cron jobs), but this might introduce delays in detecting suspicious activity.
+
+- **Threshold Values Hardcoded**: 
+  - For simplicity, threshold values (e.g., max transaction amount, frequency check interval) are hardcoded in the application.
+  - A more flexible approach would involve moving these to configuration files or environment variables for easier modification.
+
+- **Pagination**: 
+  - Basic pagination was added using the offset parameter when fetching suspicious transactions.
+  - However, limit or advanced filtering was not implemented to keep the solution straightforward.
+
+## Future Improvements and Enhancements
+
+- **Dynamic Threshold Configuration**: 
+  - Move the suspicious transaction thresholds to configuration files or environment variables for easier modification. This will allow for more flexible adjustments without requiring code changes and redeployments.
+
+- **Authentication and Authorization**: 
+  - Implement JWT-based authentication to ensure only authorized users can access or create transactions. This will enhance the security of the application and protect sensitive transaction data.
+
+- **Rate Limiting**: 
+  - Add rate limiting to prevent abuse of the API. This will help mitigate the risk of denial-of-service attacks and ensure fair usage of the service.
+
 
 ## Setup Instructions
 
