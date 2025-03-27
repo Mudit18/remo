@@ -1,7 +1,5 @@
 package com.md.remo.repository;
 
-import java.util.List;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -37,18 +35,4 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                                              @Param("timeThreshold") Integer timeThreshold, 
                                              @Param("countThreshold") Integer countThreshold,
                                              @Param("transactionType") String transactionType);
-
-    @Query(value = """
-        SELECT t.* 
-        FROM suspicious_transactions st
-        JOIN transactions t 
-            ON st.transaction_id = t.id
-        WHERE t.user_id = :userId
-            AND t.is_active = true
-            AND st.resolved = false
-        ORDER BY t.timestamp DESC
-        LIMIT :limit OFFSET :offset
-    """, nativeQuery = true)
-    List<Transaction> findSuspiciousTransactionsByUserId(@Param("userId") String userId, @Param("limit") Long limit, @Param("offset") Long offset);
-
 }

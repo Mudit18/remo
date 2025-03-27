@@ -1,6 +1,7 @@
 package com.md.remo.controller;
 
 import com.md.remo.dto.TransactionDTO;
+import com.md.remo.model.SuspiciousTransaction;
 import com.md.remo.model.Transaction;
 import com.md.remo.service.TransactionService;
 
@@ -57,13 +58,13 @@ public class TransactionController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
         }
     )
-    public ResponseEntity<List<Transaction>> getSuspiciousTransactions(@PathVariable String userId, @RequestParam(defaultValue = "0") Long offset) {
+    public ResponseEntity<List<SuspiciousTransaction>> getSuspiciousTransactions(@PathVariable String userId, @RequestParam(defaultValue = "0") Long offset) {
         if (userId == null || userId.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(null);
         }
         try {
             // TODO authorization
-            List<Transaction> suspiciousTransactions = service.getSuspiciousTransactions(userId, 100L, offset);
+            List<SuspiciousTransaction> suspiciousTransactions = service.getSuspiciousTransactions(userId, 100L, offset);
             return ResponseEntity.ok(suspiciousTransactions);
         } catch (Exception e) {
             // TODO log using logger

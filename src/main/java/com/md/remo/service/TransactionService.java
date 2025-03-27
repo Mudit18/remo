@@ -98,7 +98,7 @@ public class TransactionService {
         suspiciousTransactionRepository.saveAll(suspiciousTransactions);
     }
 
-    public List<Transaction> getSuspiciousTransactions(String userId, Long limit, Long offset) {
-        return transactionRepository.findSuspiciousTransactionsByUserId(userId, limit, offset);
+    public List<SuspiciousTransaction> getSuspiciousTransactions(String userId, Long limit, Long offset) {
+        return suspiciousTransactionRepository.findSuspiciousTransactionsByUserId(userId, limit, offset);
     }
 }
