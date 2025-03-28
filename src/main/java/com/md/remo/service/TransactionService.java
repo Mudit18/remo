@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.md.remo.dto.TransactionDTO;
 import com.md.remo.model.SuspiciousTransaction;
@@ -31,9 +32,11 @@ public class TransactionService {
         this.suspiciousTransactionRepository = suspiciousTransactionRepository;
     }
 
-    // TODO make this robust and transactional so that even 
-    // if the suspicious transaction logic fails for some reason, 
-    // the transaction should not be added to the DB
+    /* 
+        Transactional method to ensure that it will not be saved 
+        if the suspicious transaction validation fails. 
+    */
+    @Transactional
     public Transaction createTransaction(TransactionDTO dto) {
         Transaction transaction = Transaction.builder()
             .userId(dto.getUserId())
