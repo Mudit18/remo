@@ -16,6 +16,9 @@ import com.md.remo.repository.SuspiciousTransactionRepository;
 import com.md.remo.repository.TransactionRepository;
 import com.md.remo.utils.transactions.TransactionUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 public class TransactionService {
 
@@ -43,7 +46,7 @@ public class TransactionService {
         try {
             transaction = transactionRepository.save(transaction);
         } catch (Exception e) {
-            System.err.printf("Error saving transaction for user ID: %s. Exception: %s%n", transaction.getUserId(), e.getMessage());
+            log.error("Error saving transaction for user ID: {}. Exception: {}", transaction.getUserId(), e.getMessage());
             throw new RuntimeException("Failed to create transaction", e);
         }
         if (transaction.getId() != null) {
@@ -58,7 +61,7 @@ public class TransactionService {
 
         // Checking for high volume transactions
         if (TransactionUtil.isHighVolumeTransaction(transaction)) {
-            System.out.println("High volume transaction detected for user ID: " + transaction.getUserId());
+            log.info("High volume transaction detected for user ID: {}", transaction.getUserId());
             flaggedSuspicions.add(SuspiciousTransactionType.HIGH_VOLUME_TRANSACTIONS);
         }
 
@@ -69,7 +72,7 @@ public class TransactionService {
             TransactionUtil.FREQUENT_TRANSACTION_AMOUNT_THRESHOLD
         );
         if (recentTransactions > TransactionUtil.FREQUENT_TRANSACTION_COUNT_THRESHOLD) {
-            System.out.println("Frequent small transactions detected for user ID: " + transaction.getUserId());
+            log.info("Frequent small transactions detected for user ID: {}", transaction.getUserId());
             flaggedSuspicions.add(SuspiciousTransactionType.FREQUENT_SMALL_TRANSACTIONS);
         }
 
@@ -80,7 +83,7 @@ public class TransactionService {
             TransactionUtil.RAPID_TRANSFER_COUNT_THRESHOLD,
             TransactionType.TRANSFER.toString()
         )) {
-            System.out.println("Rapid transfers detected for user ID: " + transaction.getUserId());
+            log.info("Rapid transfers detected for user ID: {}", transaction.getUserId());
             flaggedSuspicions.add(SuspiciousTransactionType.RAPID_TRANSFERS);
         }
 

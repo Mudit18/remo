@@ -14,8 +14,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
+@Slf4j
 @RequestMapping("/api/transactions")
 @Tag(name = "Transactions", description = "Transaction Management API")
 public class TransactionController {
@@ -37,13 +39,16 @@ public class TransactionController {
         }
     )
     public ResponseEntity<Transaction> logTransaction(@RequestBody TransactionDTO transaction) {
+        long startTime = System.currentTimeMillis();
         try {
             // TODO authorization
             Transaction createdTransaction = service.createTransaction(transaction);
+            long endTime = System.currentTimeMillis();
+            log.info("Transaction created successfully for user ID: {}. Time taken: {} ms", transaction.getUserId(), (endTime - startTime));
             return ResponseEntity.status(HttpStatus.CREATED).body(createdTransaction);
         } catch (Exception e) {
-            // TODO add a logger and log exception
-            System.out.printf("Error saving transaction for user ID: %s. Exception: %s%n", transaction.getUserId(), e.getMessage());
+            long endTime = System.currentTimeMillis();
+            log.error("Error saving transaction for user ID: {}. Exception: {}. Time taken: {} ms", transaction.getUserId(), e.getMessage(), (endTime - startTime));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -59,16 +64,19 @@ public class TransactionController {
         }
     )
     public ResponseEntity<List<SuspiciousTransaction>> getSuspiciousTransactions(@PathVariable String userId, @RequestParam(defaultValue = "0") Long offset) {
+        long startTime = System.currentTimeMillis();
         if (userId == null || userId.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(null);
         }
         try {
             // TODO authorization
             List<SuspiciousTransaction> suspiciousTransactions = service.getSuspiciousTransactions(userId, 100L, offset);
+            long endTime = System.currentTimeMillis();
+            log.info("Fetched suspicious transactions for user ID: {}. Time taken: {} ms", userId, (endTime - startTime));
             return ResponseEntity.ok(suspiciousTransactions);
         } catch (Exception e) {
-            // TODO log using logger
-            System.out.printf("Error retrieving suspicious transactions for user ID: %s. Exception: %s%n", userId, e.getMessage());
+            long endTime = System.currentTimeMillis();
+            log.error("Error retrieving suspicious transactions for user ID: {}. Exception: {}. Time taken: {} ms", userId, e.getMessage(), (endTime - startTime));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
