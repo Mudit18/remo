@@ -13,7 +13,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
@@ -77,6 +81,40 @@ public class TransactionController {
         } catch (Exception e) {
             long endTime = System.currentTimeMillis();
             log.error("Error retrieving suspicious transactions for user ID: {}. Exception: {}. Time taken: {} ms", userId, e.getMessage(), (endTime - startTime));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/getBlockedUsers")
+    @Operation(
+        summary = "Get blocked users",
+        description = "Fetches all users with suspicious transactions.",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "List of users and their flagged transactions"),
+            @ApiResponse(responseCode = "400", description = "Invalid user ID"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+        }
+    )
+    public ResponseEntity<Map<String, List<Transaction>>> getBlockedUserDetails() {
+        long startTime = System.currentTimeMillis();
+        try {
+            // TODO authorization
+            List<Transaction> suspiciousTransactions = service.getAllSuspiciousTransactions();
+            Map<String, List<Transaction>> blockedUsers = new HashMap<>();
+            suspiciousTransactions.forEach((t) -> {
+                List<Transaction> userTransactions = blockedUsers.get(t.getUserId());
+                if (userTransactions == null) {
+                    userTransactions = new ArrayList<>();
+                }
+                userTransactions.add(t);
+                blockedUsers.put(t.getUserId(), userTransactions);
+            });
+            long endTime = System.currentTimeMillis();
+            log.info("Fetched blocked users details. Time taken: {} ms", (endTime - startTime));
+            return ResponseEntity.ok(blockedUsers);
+        } catch (Exception e) {
+            long endTime = System.currentTimeMillis();
+            log.error("Error fetching blocked users. Exception: {}. Time taken: {} ms", e.getMessage(), (endTime - startTime));
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

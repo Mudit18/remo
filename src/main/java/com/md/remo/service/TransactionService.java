@@ -72,20 +72,23 @@ public class TransactionService {
         long recentTransactions = transactionRepository.getRecentTransactionsBelowThreshold(
             transaction.getUserId(),
             TransactionUtil.FREQUENT_TRANSACTION_TIME_THRESHOLD,
-            TransactionUtil.FREQUENT_TRANSACTION_AMOUNT_THRESHOLD
+            TransactionUtil.FREQUENT_TRANSACTION_AMOUNT_THRESHOLD,
+            transaction.getTimestamp()
         );
         if (recentTransactions > TransactionUtil.FREQUENT_TRANSACTION_COUNT_THRESHOLD) {
             log.info("Frequent small transactions detected for user ID: {}", transaction.getUserId());
             flaggedSuspicions.add(SuspiciousTransactionType.FREQUENT_SMALL_TRANSACTIONS);
         }
 
-        // Checking for rapid transfers        
-        if (transactionRepository.checkForRapidTransactionsOfType(
+        // Checking for rapid transfers
+        List<Transaction> lastNTransactions = transactionRepository.getLastNTransactionsInPeriod(
             transaction.getUserId(),
             TransactionUtil.RAPID_TRANSFER_TIME_THRESHOLD,
             TransactionUtil.RAPID_TRANSFER_COUNT_THRESHOLD,
-            TransactionType.TRANSFER.toString()
-        )) {
+            transaction.getTimestamp());
+
+        if (lastNTransactions.size() == TransactionUtil.RAPID_TRANSFER_COUNT_THRESHOLD &&
+            lastNTransactions.stream().allMatch(t -> TransactionType.TRANSFER.equals(t.getTransactionType()))) {
             log.info("Rapid transfers detected for user ID: {}", transaction.getUserId());
             flaggedSuspicions.add(SuspiciousTransactionType.RAPID_TRANSFERS);
         }
@@ -106,5 +109,9 @@ public class TransactionService {
 
     public List<SuspiciousTransaction> getSuspiciousTransactions(String userId, Long limit, Long offset) {
         return suspiciousTransactionRepository.findSuspiciousTransactionsByUserId(userId, limit, offset);
+    }
+
+    public List<Transaction> getAllSuspiciousTransactions() {
+        return transactionRepository.findSuspiciousTransactions();
     }
 }
