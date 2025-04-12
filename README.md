@@ -1,10 +1,10 @@
 # Remo
 
 ## Description
-Suspicious Activity Pattern Detection
+Transaction recording and suspicious activity pattern detection
 
 ## Requirements
-For detailed information on suspicious activity pattern detection, refer to the [Google Document](https://docs.google.com/document/d/16FhEzKgQoMVkfY8WiZpQ3oNoooFEHIF58zbdLFXzt2s/edit?tab=t.0#heading=h.ft9vvjr9c5r7).
+For detailed requirements, refer to the [PRD here](https://docs.google.com/document/d/16FhEzKgQoMVkfY8WiZpQ3oNoooFEHIF58zbdLFXzt2s/edit?tab=t.0#heading=h.ft9vvjr9c5r7).
 
 # Table of Contents
 1. [Setup Instructions](#setup-instructions)
