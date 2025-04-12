@@ -1,3 +1,28 @@
+# Remo
+
+## Description
+Suspicious Activity Pattern Detection
+
+## Requirements
+For detailed information on suspicious activity pattern detection, refer to the [Google Document](https://docs.google.com/document/d/16FhEzKgQoMVkfY8WiZpQ3oNoooFEHIF58zbdLFXzt2s/edit?tab=t.0#heading=h.ft9vvjr9c5r7).
+
+# Table of Contents
+1. [Setup Instructions](#setup-instructions)
+   - [DB Setup](#db-setup)
+   - [Build the project](#build-the-project)
+   - [Testing](#testing)
+2. [Infrastructure](#infrastructure)
+   - [Tech Stack Used](#tech-stack-used)
+   - [Project Architecture](#project-architecture)
+   - [Transaction Processing Workflow](#transaction-processing-workflow)
+   - [Criteria for Flagging Suspicious Transactions](#criteria-for-flagging-suspicious-transactions)
+   - [Alternative Approaches Considered](#alternative-approaches-considered)
+   - [Assumptions and Tradeoffs](#assumptions-and-tradeoffs)
+3. [Future Improvements](#future-improvements)
+
+
+<br><br>
+
 # Setup Instructions
 
 ## DB Setup
@@ -26,7 +51,7 @@
    psql -h localhost -U postgres -d remo -p 5432 -f src/scripts/db/init.sql
    ```
 
-
+<br>
 
 ## Build the project
 
@@ -41,7 +66,7 @@
    ```
 3. **Access the [Swagger UI](http://localhost:8080/remo-api.html)** to see the API documentation at
 
-
+<br>
 
 ## Testing
 
@@ -67,8 +92,8 @@
    curl -X GET "http://localhost:8080/api/transactions/getSuspiciousTransactions/a123456"
    ```
 
-
-
+<br>
+<br>
 
 # Infrastructure
 
@@ -77,7 +102,7 @@
 - **Spring Boot** (using Spring Initializer)
 - **PostgreSQL**
 
-
+<br>
 
 ## Project Architecture
 
@@ -90,7 +115,7 @@ The project utilizes a layered architecture comprising:
    - **Transaction Model**: Represents financial transactions with attributes like `id`, `userId`, `amount`, `timestamp`, `lastUpdated`, `isActive`, and `transactionType`.
    - **SuspiciousTransaction Model**: Flags suspicious transactions with attributes such as `transaction_id`, `type`, `lastUpdated`, and `resolved`.
 
-
+<br>
 
 ### Transaction Processing Workflow
 
@@ -98,7 +123,7 @@ The project utilizes a layered architecture comprising:
 2. The `TransactionController` delegates the request to the `TransactionService`.
 3. The `createTransaction` method saves the transaction and calls `validateSuspiciousTransaction` to check for suspicious criteria.
 
-
+<br>
 
 ### Criteria for Flagging Suspicious Transactions
 
@@ -108,7 +133,7 @@ The project utilizes a layered architecture comprising:
 
 If flagged, a corresponding entry is created in the `SuspiciousTransaction` model for further investigation.
 
-
+<br>
 
 ### Alternative Approaches Considered
 
@@ -118,7 +143,15 @@ If flagged, a corresponding entry is created in the `SuspiciousTransaction` mode
 
 The proactive validation approach was chosen considering the time to build and the accuracy.
 
+<br>
 
+### Assumptions and Tradeoffs
+
+- The transactions coming to the system can be from past but are always sent in order of their timestamp.
+- Flagging suspicious transactions is considered the most important factor, so the transactions have been kept transactional in nature - if validation fails, system doesn't allow the transaction.
+
+<br>
+<br>
 
 ## Future Improvements
 
