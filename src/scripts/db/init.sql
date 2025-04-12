@@ -5,7 +5,7 @@ CREATE TABLE transactions (
     amount NUMERIC(19, 4) NOT NULL,
     timestamp TIMESTAMP NOT NULL,
     transaction_type VARCHAR(255) NOT NULL,
-    last_updated TIMESTAMP NOT NULL DEFAULT NOW()
+    last_updated TIMESTAMP NOT NULL DEFAULT NOW(),
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 

@@ -91,7 +91,6 @@ public class TransactionController {
         description = "Fetches all users with suspicious transactions.",
         responses = {
             @ApiResponse(responseCode = "200", description = "List of users and their flagged transactions"),
-            @ApiResponse(responseCode = "400", description = "Invalid user ID"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
         }
     )

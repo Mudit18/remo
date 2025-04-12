@@ -1,51 +1,6 @@
-# Tech Stack Used
-- **Java**
-- **Spring Boot** (using Spring Initializer)
-- **PostgreSQL**
+# Setup Instructions
 
-## Flow and Design of the Project
-
-## Project Architecture
-
-The project utilizes a layered architecture comprising:
-
-1. **Controller Layer**: Manages HTTP requests and responses, serving as the interface between the client and service layer.
-2. **Service Layer**: Contains business logic, processing data from the controller and interacting with the repository for CRUD operations.
-3. **Repository Layer**: Handles data access and manipulation via Spring Data JPA.
-4. **Model Layer**: Represents data structures, including:
-   - **Transaction Model**: Represents financial transactions with attributes like `id`, `userId`, `amount`, `timestamp`, `lastUpdated`, `isActive`, and `transactionType`.
-   - **SuspiciousTransaction Model**: Flags suspicious transactions with attributes such as `transaction_id`, `type`, `lastUpdated`, and `resolved`.
-
-### Transaction Processing Workflow
-
-1. A user submits a transaction request via the API.
-2. The `TransactionController` delegates the request to the `TransactionService`.
-3. The `createTransaction` method saves the transaction and calls `validateSuspiciousTransaction` to check for suspicious criteria.
-
-### Criteria for Flagging Suspicious Transactions
-
-- **High Volume Transactions**: Flags transactions exceeding a predefined amount.
-- **Frequent Small Transactions**: Flags if multiple transactions below a certain amount occur within a specified timeframe.
-- **Rapid Transfers**: Flags if rapid transfers of a specific type exceed a threshold.
-
-If flagged, a corresponding entry is created in the `SuspiciousTransaction` model for further investigation.
-
-### Alternative Approaches Considered
-
-- **Cron Jobs**: Periodic checks post-processing could delay fraud detection.
-- **SQL Triggers**: Automatic flagging at the database level complicates management and may hinder flexibility.
-- **Message Queue Architecture**: Asynchronous processing adds complexity and latency, not suitable for initial implementation.
-
-The proactive validation approach was chosen considering the time to build and the accuracy.
-
-## Future Improvements
-
-- **Dynamic Threshold Configuration**: Move thresholds to configuration files for easier adjustments.
-- **Authentication and Authorization**: Implement JWT-based authentication for secure access to transactions.
-- **Rate Limiting**: Introduce rate limiting to prevent API abuse and ensure fair usage.
-- **Database Indexing**: Implement indexing on frequently queried fields like user_id and timestamp in the database to improve query performance and efficiency.
-
-## Setup Instructions
+## DB Setup
 
 1. **Ensure postgres is installed on your system and run PostgreSQL locally or in Docker and create the `remo` database:**
    ```bash
@@ -67,17 +22,25 @@ The proactive validation approach was chosen considering the time to build and t
    > **Note:** Consider moving to an environment-specific properties setup.
 
 4. **Run the SQL script** `init.sql`.
+   ```bash
+   psql -h localhost -U postgres -d remo -p 5432 -f src/scripts/db/init.sql
+   ```
 
-5. **Build the project:**
+
+
+## Build the project
+
+1. **Build the project:**
    ```bash
    mvn clean install
    ```
 
-6. **Run the application:**
+2. **Run the application:**
    ```bash
    mvn spring-boot:run
    ```
-7. **Access the Swagger UI** to see the API documentation at [http://localhost:8080/remo-api.html](http://localhost:8080/remo-api.html)
+3. **Access the [Swagger UI](http://localhost:8080/remo-api.html)** to see the API documentation at
+
 
 
 ## Testing
@@ -98,3 +61,68 @@ The proactive validation approach was chosen considering the time to build and t
    ```bash
    curl -X GET "http://localhost:8080/api/transactions/getSuspiciousTransactions/a123456"
    ```
+
+- To get users blocked via suspicious transactions
+   ```bash
+   curl -X GET "http://localhost:8080/api/transactions/getSuspiciousTransactions/a123456"
+   ```
+
+
+
+
+# Infrastructure
+
+## Tech Stack Used
+- **Java**
+- **Spring Boot** (using Spring Initializer)
+- **PostgreSQL**
+
+
+
+## Project Architecture
+
+The project utilizes a layered architecture comprising:
+
+1. **Controller Layer**: Manages HTTP requests and responses, serving as the interface between the client and service layer.
+2. **Service Layer**: Contains business logic, processing data from the controller and interacting with the repository for CRUD operations.
+3. **Repository Layer**: Handles data access and manipulation via Spring Data JPA.
+4. **Model Layer**: Represents data structures, including:
+   - **Transaction Model**: Represents financial transactions with attributes like `id`, `userId`, `amount`, `timestamp`, `lastUpdated`, `isActive`, and `transactionType`.
+   - **SuspiciousTransaction Model**: Flags suspicious transactions with attributes such as `transaction_id`, `type`, `lastUpdated`, and `resolved`.
+
+
+
+### Transaction Processing Workflow
+
+1. A user submits a transaction request via the API.
+2. The `TransactionController` delegates the request to the `TransactionService`.
+3. The `createTransaction` method saves the transaction and calls `validateSuspiciousTransaction` to check for suspicious criteria.
+
+
+
+### Criteria for Flagging Suspicious Transactions
+
+- **High Volume Transactions**: Flags transactions exceeding a predefined amount.
+- **Frequent Small Transactions**: Flags if multiple transactions below a certain amount occur within a specified timeframe.
+- **Rapid Transfers**: Flags if rapid transfers of a specific type exceed a threshold.
+
+If flagged, a corresponding entry is created in the `SuspiciousTransaction` model for further investigation.
+
+
+
+### Alternative Approaches Considered
+
+- **Cron Jobs**: Periodic checks post-processing could delay fraud detection.
+- **SQL Triggers**: Automatic flagging at the database level complicates management and may hinder flexibility.
+- **Message Queue Architecture**: Asynchronous processing adds complexity and latency, not suitable for initial implementation.
+
+The proactive validation approach was chosen considering the time to build and the accuracy.
+
+
+
+## Future Improvements
+
+- **Dynamic Threshold Configuration**: Move thresholds to configuration files for easier adjustments.
+- **Authentication and Authorization**: Implement JWT-based authentication for secure access to transactions.
+- **Rate Limiting**: Introduce rate limiting to prevent API abuse and ensure fair usage.
+- **Database Indexing**: Implement indexing on frequently queried fields like user_id and timestamp in the database to improve query performance and efficiency.
