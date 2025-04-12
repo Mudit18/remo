@@ -3,16 +3,16 @@ package com.md.remo.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.md.remo.dto.TransactionDTO;
+import com.md.remo.model.FlaggedUser;
 import com.md.remo.model.SuspiciousTransaction;
 import com.md.remo.model.SuspiciousTransactionType;
 import com.md.remo.model.Transaction;
-import com.md.remo.model.TransactionType;
+import com.md.remo.repository.FlaggedUserRepository;
 import com.md.remo.repository.SuspiciousTransactionRepository;
 import com.md.remo.repository.TransactionRepository;
 import com.md.remo.utils.transactions.TransactionUtil;
@@ -27,91 +27,154 @@ public class TransactionService {
 
     private final SuspiciousTransactionRepository suspiciousTransactionRepository;
 
-    public TransactionService(TransactionRepository repository, SuspiciousTransactionRepository suspiciousTransactionRepository) {
+    private final FlaggedUserRepository flaggedUserRepository;
+
+    public TransactionService(TransactionRepository repository, 
+        SuspiciousTransactionRepository suspiciousTransactionRepository,
+        FlaggedUserRepository flaggedUserRepository) {
         this.transactionRepository = repository;
         this.suspiciousTransactionRepository = suspiciousTransactionRepository;
+        this.flaggedUserRepository = flaggedUserRepository;
     }
 
     /* 
-        Transactional method to ensure that it will not be saved 
+        Transactional method to ensure that transaction will not be saved 
         if the suspicious transaction validation fails. 
     */
     @Transactional
-    public Transaction createTransaction(TransactionDTO dto) {
-        Transaction transaction = Transaction.builder()
-            .userId(dto.getUserId())
-            .amount(dto.getAmount())
-            .timestamp(dto.getTimestamp())
+    public Transaction createTransaction(Transaction transaction) {
+        try {
+            boolean userFlagged = flaggedUserRepository
+                .isUserFlagged(transaction.getUserId());
+
+            if (userFlagged) {
+                log.error("User account is flagged and temporarily blocked for user ID: {}", transaction.getUserId());
+                throw new RuntimeException(
+                    "User account is flagged and temporarily blocked."
+                );
+            }
+
+            // Create and save the transaction
+            Transaction savedTransaction = saveTransaction(transaction);
+
+            if (savedTransaction.getId() != null) {
+                validateSuspiciousTransaction(savedTransaction);
+                return savedTransaction;
+            } else {
+                log.error("Failed to create transaction for user ID: {}", transaction.getUserId());
+                throw new DataAccessException("Failed to create transaction") {};
+            }
+        } catch (DataAccessException e) {
+            log.error(
+                "Error saving transaction for user ID: {}. Exception: {}", 
+                transaction.getUserId(), e.getMessage()
+            );
+            throw e;
+        } catch (Exception e) {
+            log.error(
+                "Unexpected error occurred while creating transaction for user ID: {}. Exception: {}", 
+                transaction.getUserId(), e
+            );
+            throw e;
+        }
+    }
+
+    private Transaction saveTransaction(Transaction transaction) {
+        Transaction newTransaction = Transaction.builder()
+            .userId(transaction.getUserId())
+            .amount(transaction.getAmount())
+            .timestamp(transaction.getTimestamp())
+            .createdAt(LocalDateTime.now())
             .lastUpdated(LocalDateTime.now())
-            .transactionType(dto.getTransactionType())
+            .transactionType(transaction.getTransactionType())
             .isActive(true)
             .build();
-        try {
-            transaction = transactionRepository.save(transaction);
-        } catch (Exception e) {
-            log.error("Error saving transaction for user ID: {}. Exception: {}", transaction.getUserId(), e.getMessage());
-            throw new RuntimeException("Failed to create transaction", e);
-        }
-        if (transaction.getId() != null) {
-            validateSuspiciousTransaction(transaction);
-            return transaction;
-        }
-        throw new RuntimeException(String.format("Transaction creation failed for user ID %s", transaction.getUserId()));
+        return transactionRepository.save(newTransaction);
     }
 
     private void validateSuspiciousTransaction(Transaction transaction) {
-        List<SuspiciousTransactionType> flaggedSuspicions = new ArrayList<>();
+        // Get the suspicious transactions
+        List<SuspiciousTransaction> flaggedSuspicions = 
+            identifyFlaggedTransactions(transaction);
 
-        // Checking for high volume transactions
-        if (TransactionUtil.isHighVolumeTransaction(transaction)) {
-            log.info("High volume transaction detected for user ID: {}", transaction.getUserId());
-            flaggedSuspicions.add(SuspiciousTransactionType.HIGH_VOLUME_TRANSACTIONS);
+        suspiciousTransactionRepository.saveAll(flaggedSuspicions);
+
+        if (!flaggedSuspicions.isEmpty()) {
+            flagUser(transaction.getUserId());
         }
-
-        // Checking for frequent small transactions
-        long recentTransactions = transactionRepository.getRecentTransactionsBelowThreshold(
-            transaction.getUserId(),
-            TransactionUtil.FREQUENT_TRANSACTION_TIME_THRESHOLD,
-            TransactionUtil.FREQUENT_TRANSACTION_AMOUNT_THRESHOLD,
-            transaction.getTimestamp()
-        );
-        if (recentTransactions > TransactionUtil.FREQUENT_TRANSACTION_COUNT_THRESHOLD) {
-            log.info("Frequent small transactions detected for user ID: {}", transaction.getUserId());
-            flaggedSuspicions.add(SuspiciousTransactionType.FREQUENT_SMALL_TRANSACTIONS);
-        }
-
-        // Checking for rapid transfers
-        List<Transaction> lastNTransactions = transactionRepository.getLastNTransactionsInPeriod(
-            transaction.getUserId(),
-            TransactionUtil.RAPID_TRANSFER_TIME_THRESHOLD,
-            TransactionUtil.RAPID_TRANSFER_COUNT_THRESHOLD,
-            transaction.getTimestamp());
-
-        if (lastNTransactions.size() == TransactionUtil.RAPID_TRANSFER_COUNT_THRESHOLD &&
-            lastNTransactions.stream().allMatch(t -> TransactionType.TRANSFER.equals(t.getTransactionType()))) {
-            log.info("Rapid transfers detected for user ID: {}", transaction.getUserId());
-            flaggedSuspicions.add(SuspiciousTransactionType.RAPID_TRANSFERS);
-        }
-
-        // Saving all flagged suspicious transactions
-        // TODO based on the business logic, mark related transactions suspicious too
-        List<SuspiciousTransaction> suspiciousTransactions = flaggedSuspicions.stream()
-            .map(type -> SuspiciousTransaction.builder()
-                .transaction_id(transaction.getId())
-                .type(type)
-                .lastUpdated(LocalDateTime.now())
-                .resolved(false)
-                .build())
-            .collect(Collectors.toList());
-
-        suspiciousTransactionRepository.saveAll(suspiciousTransactions);
     }
 
-    public List<SuspiciousTransaction> getSuspiciousTransactions(String userId, Long limit, Long offset) {
-        return suspiciousTransactionRepository.findSuspiciousTransactionsByUserId(userId, limit, offset);
+    private void flagUser(String userId) {
+        FlaggedUser flaggedUser = FlaggedUser.builder()
+            .userId(userId)
+            .isActive(true)
+            .flaggedAt(LocalDateTime.now())
+            .build();
+        flaggedUserRepository.save(flaggedUser);
+    }
+
+    private List<SuspiciousTransaction> identifyFlaggedTransactions(
+        Transaction transaction) {
+        List<SuspiciousTransaction> flaggedSuspicions = new ArrayList<>();
+
+        // High Volume Transactions
+        if (TransactionUtil.isHighVolumeTransaction(transaction)) {
+            logSuspiciousTransaction(
+                "High volume transaction",
+                transaction.getUserId()
+            );
+            flaggedSuspicions.add(
+                TransactionUtil.createSuspiciousTransaction(
+                    SuspiciousTransactionType.HIGH_VOLUME_TRANSACTIONS,
+                    transaction
+                )
+            );
+        }
+        // Fetching the recent transactions from the last one hour
+        List<Transaction> recentTransactions = transactionRepository
+            .getRecentTransactions(
+                transaction.getUserId(),
+                TransactionUtil.FREQUENT_TRANSACTION_TIME_THRESHOLD,
+                transaction.getTimestamp()
+            );
+
+        // Frequent Small Transactions
+        List<SuspiciousTransaction> freqSmallTxns = TransactionUtil.
+            checkFrequentSmallTransactions(recentTransactions);
+        if (!freqSmallTxns.isEmpty()) {
+            logSuspiciousTransaction(
+                "Frequent small transactions",
+                transaction.getUserId()
+            );
+            flaggedSuspicions.addAll(freqSmallTxns);
+        }
+
+        // Rapid Transfers
+        List<SuspiciousTransaction> rapidTransfers = TransactionUtil.
+            checkRapidTransfers(recentTransactions);
+        if (!rapidTransfers.isEmpty()) {
+            logSuspiciousTransaction(
+                "Rapid transfers",
+                transaction.getUserId()
+            );
+            flaggedSuspicions.addAll(rapidTransfers);
+        }
+
+        return flaggedSuspicions;
+    }
+
+    private void logSuspiciousTransaction(String description, String userId) {
+        log.info("{} detected for user ID: {}", description, userId);
+    }
+
+    public List<SuspiciousTransaction> getSuspiciousTransactions(
+        String userId, Long limit, Long offset) {
+        return suspiciousTransactionRepository
+            .findSuspiciousTransactionsByUserId(userId, limit, offset);
     }
 
     public List<Transaction> getAllSuspiciousTransactions() {
-        return transactionRepository.findSuspiciousTransactions();
+        return transactionRepository
+            .findSuspiciousTransactions();
     }
 }

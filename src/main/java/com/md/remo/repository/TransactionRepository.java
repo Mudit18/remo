@@ -14,31 +14,16 @@ import com.md.remo.model.Transaction;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
     @Query(value = """
-        SELECT COUNT(*) 
+        SELECT *
         FROM transactions t
         WHERE t.user_id = :userId 
             AND t.timestamp > (:transactionTimestamp :: timestamp - (:timeThreshold * INTERVAL '1 minute'))
-            AND t.amount < :amountThreshold
-            AND t.is_active = true
-    """, nativeQuery = true)
-    long getRecentTransactionsBelowThreshold(@Param("userId") String userId, 
-                                             @Param("timeThreshold") Integer timeThreshold, 
-                                             @Param("amountThreshold") Integer amountThreshold, 
-                                             @Param("transactionTimestamp") LocalDateTime transactionTimestamp);
-
-    @Query(value = """
-        SELECT *
-        FROM transactions t
-        WHERE t.user_id = :userId
-            AND t.timestamp > (:transactionTimestamp :: timestamp - (:timeThreshold * INTERVAL '1 minute'))
             AND t.is_active = true
         ORDER BY t.timestamp DESC
-        LIMIT :countThreshold
     """, nativeQuery = true)
-    List<Transaction> getLastNTransactionsInPeriod(@Param("userId") String userId, 
-                                @Param("timeThreshold") Integer timeThreshold, 
-                                @Param("countThreshold") Integer countThreshold,
-                                @Param("transactionTimestamp") LocalDateTime transactionTimestamp);
+    List<Transaction> getRecentTransactions(@Param("userId") String userId, 
+                                             @Param("timeThreshold") Integer timeThreshold,
+                                             @Param("transactionTimestamp") LocalDateTime transactionTimestamp);
 
 
     @Query(value = """

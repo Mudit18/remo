@@ -33,6 +33,9 @@ public class Transaction {
     private LocalDateTime timestamp;
 
     @Column(nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
     private LocalDateTime lastUpdated;
 
     // This is for soft delete, if hard delete is a requirement,

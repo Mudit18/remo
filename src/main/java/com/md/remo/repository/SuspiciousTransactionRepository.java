@@ -22,6 +22,9 @@ public interface SuspiciousTransactionRepository extends JpaRepository<Suspiciou
         ORDER BY t.timestamp DESC
         LIMIT :limit OFFSET :offset
     """, nativeQuery = true)
-    List<SuspiciousTransaction> findSuspiciousTransactionsByUserId(@Param("userId") String userId, @Param("limit") Long limit, @Param("offset") Long offset);
+    List<SuspiciousTransaction> findSuspiciousTransactionsByUserId(
+        @Param("userId") String userId,
+        @Param("limit") Long limit,
+        @Param("offset") Long offset);
 
 }

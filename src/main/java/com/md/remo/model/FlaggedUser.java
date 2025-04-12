@@ -2,7 +2,12 @@ package com.md.remo.model;
 
 import java.time.LocalDateTime;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,31 +16,23 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Builder
-@Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "suspicious_transactions", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"transaction_id", "type"})
-})
-public class SuspiciousTransaction {
+@Builder
+@Entity
+@Table(name = "flagged_users")
+public class FlaggedUser {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private Long transaction_id;
+    private String userId;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private SuspiciousTransactionType type;
-
-    @Column(nullable = false)
-    private Boolean resolved;
+    private Boolean isActive;
 
     @Column(nullable = false)
     private LocalDateTime flaggedAt;
-
-    @Column(nullable = false)
-    private LocalDateTime lastUpdated;
 }

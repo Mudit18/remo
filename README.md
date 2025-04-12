@@ -74,7 +74,7 @@ For detailed requirements, refer to the [PRD here](https://docs.google.com/docum
 
 - To log a transaction:
    ```bash
-   curl -X POST "http://localhost:8080/api/transactions/add" -H "Content-Type: application/json" -d '{
+   curl -X POST "http://localhost:8080/api/transactions" -H "Content-Type: application/json" -d '{
      "userId": "123456",
      "amount": 10,
      "timestamp": "2025-03-26T23:00:00",
@@ -84,12 +84,12 @@ For detailed requirements, refer to the [PRD here](https://docs.google.com/docum
 
 - To get suspicious transactions:
    ```bash
-   curl -X GET "http://localhost:8080/api/transactions/getSuspiciousTransactions/a123456"
+   curl -X GET "http://localhost:8080/api/transactions/users/123456/suspicious"
    ```
 
 - To get users blocked via suspicious transactions
    ```bash
-   curl -X GET "http://localhost:8080/api/transactions/getSuspiciousTransactions/a123456"
+   curl -X GET "http://localhost:8080/api/transactions/blocked-users"
    ```
 
 <br>
@@ -112,8 +112,9 @@ The project utilizes a layered architecture comprising:
 2. **Service Layer**: Contains business logic, processing data from the controller and interacting with the repository for CRUD operations.
 3. **Repository Layer**: Handles data access and manipulation via Spring Data JPA.
 4. **Model Layer**: Represents data structures, including:
-   - **Transaction Model**: Represents financial transactions with attributes like `id`, `userId`, `amount`, `timestamp`, `lastUpdated`, `isActive`, and `transactionType`.
-   - **SuspiciousTransaction Model**: Flags suspicious transactions with attributes such as `transaction_id`, `type`, `lastUpdated`, and `resolved`.
+   - **Transaction Model**: Represents financial transactions with attributes like `id`, `userId`, `amount`, `timestamp`, `createdAt`, `lastUpdated`, `isActive`, and `transactionType`.
+   - **SuspiciousTransaction Model**: Flags suspicious transactions with attributes such as `id`, `transaction_id`, `type`, `flaggedAt`, `lastUpdated`, and `resolved`.
+   - **FlaggedUser Model**: Represents users flagged for suspicious activity with attributes like `id`, `userId`, `flag`, `isActive`, and `flaggedAt`.
 
 <br>
 
@@ -128,10 +129,10 @@ The project utilizes a layered architecture comprising:
 ### Criteria for Flagging Suspicious Transactions
 
 - **High Volume Transactions**: Flags transactions exceeding a predefined amount.
-- **Frequent Small Transactions**: Flags if multiple transactions below a certain amount occur within a specified timeframe.
-- **Rapid Transfers**: Flags if rapid transfers of a specific type exceed a threshold.
+- **Frequent Small Transactions**: Flags if multiple transactions below a certain amount ($100) occur within a specified timeframe (1 hour).
+- **Rapid Transfers**: Flags if rapid transfers exceed a threshold within a specified timefram (5 mins).
 
-If flagged, a corresponding entry is created in the `SuspiciousTransaction` model for further investigation.
+If flagged, a corresponding entry is created in the `SuspiciousTransaction` model for further investigation. The user is also flagged and blocked from making further transactions.
 
 <br>
 
@@ -149,6 +150,13 @@ The proactive validation approach was chosen considering the time to build and t
 
 - The transactions coming to the system can be from past but are always sent in order of their timestamp.
 - Flagging suspicious transactions is considered the most important factor, so the transactions have been kept transactional in nature - if validation fails, system doesn't allow the transaction.
+a- Threshold and timeframes:
+   - High volume amount threshold - $10000
+   - Frequent transaction count threshold - 10 transactions
+   - Frequent transaction amount threshold - $100
+   - Frequent transaction time threshold - 60 minutes
+   - Rapid transfer time threshold - 5 minutes
+   - Rapid transfer count threshold - 3 transactions
 
 <br>
 <br>
