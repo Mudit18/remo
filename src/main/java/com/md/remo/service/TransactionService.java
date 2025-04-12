@@ -2,7 +2,9 @@ package com.md.remo.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -176,5 +178,19 @@ public class TransactionService {
     public List<Transaction> getAllSuspiciousTransactions() {
         return transactionRepository
             .findSuspiciousTransactions();
+    }
+
+    public Map<String, List<Transaction>> getBlockedUserDetails() {
+        List<Transaction> suspiciousTransactions = getAllSuspiciousTransactions();
+        Map<String, List<Transaction>> blockedUsers = new HashMap<>();
+        suspiciousTransactions.forEach((t) -> {
+            List<Transaction> userTransactions = blockedUsers.get(t.getUserId());
+            if (userTransactions == null) {
+                userTransactions = new ArrayList<>();
+            }
+            userTransactions.add(t);
+            blockedUsers.put(t.getUserId(), userTransactions);
+        });
+        return blockedUsers;
     }
 }

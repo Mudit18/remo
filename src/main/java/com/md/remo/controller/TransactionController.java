@@ -120,17 +120,7 @@ public class TransactionController {
     )
     public ResponseEntity<Map<String, List<Transaction>>> getBlockedUserDetails() {
         try {
-            List<Transaction> suspiciousTransactions = service
-                .getAllSuspiciousTransactions();
-            Map<String, List<Transaction>> blockedUsers = new HashMap<>();
-            suspiciousTransactions.forEach((t) -> {
-                List<Transaction> userTransactions = blockedUsers.get(t.getUserId());
-                if (userTransactions == null) {
-                    userTransactions = new ArrayList<>();
-                }
-                userTransactions.add(t);
-                blockedUsers.put(t.getUserId(), userTransactions);
-            });
+            Map<String, List<Transaction>> blockedUsers = service.getBlockedUserDetails();
             return ResponseEntity.ok(blockedUsers);
         } catch (Exception e) {
             return ResponseEntity
